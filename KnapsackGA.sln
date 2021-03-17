@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31105.61
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnapsackGA", "KnapsackGA\KnapsackGA.csproj", "{5FC49DDB-1945-45B4-BE85-432C25301EDE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5FC49DDB-1945-45B4-BE85-432C25301EDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FC49DDB-1945-45B4-BE85-432C25301EDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5FC49DDB-1945-45B4-BE85-432C25301EDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5FC49DDB-1945-45B4-BE85-432C25301EDE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {747DAE8A-4860-4C94-B469-D907EFFC51B2}
+	EndGlobalSection
+EndGlobal
