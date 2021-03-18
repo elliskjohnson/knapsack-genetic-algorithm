@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace KnapsackGA
 {
@@ -23,7 +24,7 @@ namespace KnapsackGA
         private List<string> _children;
         private List<int> _chromosomeFitness;
         private List<int> _chromosomeWeights;
-        private int _generation;
+        public int Generation;
         private int _populationSize;
         private int _maxWeight;
         private int _maxItems;
@@ -45,7 +46,7 @@ namespace KnapsackGA
             Values = new List<int>(valvals);
             random = new Random();
         }
-        public Knapsack(int populationSize = 4, int maxWeight = 35, int maxItems = 10, double mutationProbability = 0.05, int genRun = 0)
+        public Knapsack(int populationSize = 4, int maxWeight = 35, int maxItems = 10, double mutationProbability = 0.05, int genRun = 0, int optSens = 3)
         {
             Chromosomes = new List<string>();
             ChromosomeFitness = new List<int>();
@@ -55,17 +56,17 @@ namespace KnapsackGA
             MaxWeight = maxWeight;
             MaxItems = maxItems;
             MutationProbability = mutationProbability;
-            _generation = 0;
+            Generation = 0;
             FitnessSum = 0;
             MaxFitness = 0;
             MaxFitnessUpdateCount = 0;
             GenerationNoChangeCount = 0;
             GenRun = genRun;
+            OptimizationSensitivity = optSens;
         }
         #endregion
 
         #region Public Accessors
-        public int Generation { get => _generation; set => _generation = value; }
         public int PopulationSize { get => _populationSize; set => _populationSize = value; }
         public int MaxWeight { get => _maxWeight; set => _maxWeight = value; }
         public int MaxItems { get => _maxItems; set => _maxItems = value; }
@@ -83,33 +84,83 @@ namespace KnapsackGA
         public int GenerationNoChangeCount { get; private set; }
         public static List<int> Items { get => _items; set => _items = value; }
         public int GenRun { get => _genRun; set => _genRun = value; }
+        public int OptimizationSensitivity { get; set; }
         #endregion
 
         #region General Use Optimization Methods
-        public void Optimize(int numGenerations, bool printEachGeneration = false)
+        public void Optimize(int numGenerations, bool printEachGeneration = false, RichTextBox richTextBox1 = null)
         {
             InitializePopulation();
             for (int i = 0; i < numGenerations; i++)
             {
                 RunSingleGeneration();
+                Generation++;
                 if (printEachGeneration)
                 {
-                    DebugGenerationPrint();
+                    richTextBox1.AppendText(DebugGenerationPrint());
+                    richTextBox1.ScrollToCaret();
                 }
             }
             if (!printEachGeneration)
             {
-                DebugGenerationPrint();
+                richTextBox1.AppendText(DebugGenerationPrint());
+                richTextBox1.ScrollToCaret();
             }
         }
 
-        public void Optimize()
+        public void Optimize(RichTextBox richTextBox, bool printEachGeneration = false)
         {
             InitializePopulation();
-            while (GenerationNoChangeCount < (4 * PopulationSize))
+            while (GenerationNoChangeCount < (OptimizationSensitivity * PopulationSize))
             {
                 RunSingleGeneration();
-                DebugGenerationPrint();
+                Generation++;
+                if (printEachGeneration)
+                {
+                    richTextBox.AppendText(DebugGenerationPrint());
+                    richTextBox.ScrollToCaret();
+                }
+            }
+            if (!printEachGeneration)
+            {
+                richTextBox.AppendText(DebugGenerationPrint());
+            }
+        }
+
+        public void CompleteOptimizeAutoConverge(RichTextBox richTextBox, bool printEachGeneration = false)
+        {
+            while (GenerationNoChangeCount < (OptimizationSensitivity * PopulationSize))
+            {
+                RunSingleGeneration();
+                Generation++;
+                if (printEachGeneration)
+                {
+                    richTextBox.AppendText(DebugGenerationPrint());
+                    richTextBox.ScrollToCaret();
+                }
+            }
+            if (!printEachGeneration)
+            {
+                richTextBox.AppendText(DebugGenerationPrint());
+            }
+        }
+
+        public void CompleteOptimizeByGenerations(int numGenerations, bool printEachGeneration = false, RichTextBox richTextBox1 = null)
+        {
+            for (int i = Generation; i < numGenerations; i++)
+            {
+                RunSingleGeneration();
+                Generation++;
+                if (printEachGeneration)
+                {
+                    richTextBox1.AppendText(DebugGenerationPrint());
+                    richTextBox1.ScrollToCaret();
+                }
+            }
+            if (!printEachGeneration)
+            {
+                richTextBox1.AppendText(DebugGenerationPrint());
+                richTextBox1.ScrollToCaret();
             }
         }
 
@@ -120,22 +171,25 @@ namespace KnapsackGA
             UpdatePopulationWithChildren();
         }
 
-        public void RunSingleGenerationOutput()
+        public void RunSingleGenerationButton(RichTextBox richTextBox)
         {
+            Generation++;
             Crossover();
             MutateChildren();
             UpdatePopulationWithChildren();
-            DebugGenerationPrint();
+            richTextBox.AppendText(DebugGenerationPrint());
         }
         #endregion
 
         #region Debugging Print Function
-        public void DebugGenerationPrint()
+        public string DebugGenerationPrint()
         {
-            Console.WriteLine("------------------------------------------------");
-            Console.WriteLine("Generation: " + _generation.ToString());
-            Console.WriteLine(Chromosomes.ToStringExt());
-            Console.WriteLine(ChromosomeFitness.ToStringExt());
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("------------------------------------------------");
+            builder.AppendLine("Generation: " + Generation);
+            builder.AppendLine("Chromosomes: " + Chromosomes.ToStringExt());
+            builder.AppendLine("Fitness: " + ChromosomeFitness.ToStringExt());
+            return builder.ToString();
         }
         #endregion
 
@@ -219,6 +273,16 @@ namespace KnapsackGA
             FitnessSum = fitSum;
         }
 
+        public int CurMaxFitIndex()
+        {
+            int curMaxIndex = GetNFittestParents(1)[0];
+            return curMaxIndex;
+        }
+        public string CurMaxString()
+        {
+            return Chromosomes[CurMaxFitIndex()];
+        }
+
         private void UpdateFitnessTracking(int curFitness)
         {
             if (curFitness > MaxFitness)
@@ -266,16 +330,53 @@ namespace KnapsackGA
         {
             int randomPos;
             List<string> children = new List<string>(PopulationSize);
-
-            randomPos = random.Next(0, Weights.Count - 1);
-            string p1 = Chromosomes[parentIndexArray[0]];
-            string p2 = Chromosomes[parentIndexArray[1]];
-            children.AddRange(CrossoverTwoParents(size, p1, p2, randomPos));
-
-            randomPos = random.Next(0, Weights.Count - 1);
-            p1 = Chromosomes[parentIndexArray[0]];
-            p2 = Chromosomes[parentIndexArray[2]];
-            children.AddRange(CrossoverTwoParents(size, p1, p2, randomPos));
+            int numberParentsPair = PopulationSize / 2;
+            int[] parentIndices = new int[numberParentsPair];
+            switch (numberParentsPair)
+            {
+                case 1:
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[0]], Chromosomes[parentIndexArray[1]], randomPos));
+                    break;
+                case 2:
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[0]], Chromosomes[parentIndexArray[1]], randomPos));
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[0]], Chromosomes[parentIndexArray[2]], randomPos));
+                    break;
+                case 3:
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[0]], Chromosomes[parentIndexArray[1]], randomPos));
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[0]], Chromosomes[parentIndexArray[2]], randomPos));
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[1]], Chromosomes[parentIndexArray[2]], randomPos));
+                    break;
+                case 4:
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[0]], Chromosomes[parentIndexArray[1]], randomPos));
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[0]], Chromosomes[parentIndexArray[2]], randomPos));
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[1]], Chromosomes[parentIndexArray[2]], randomPos));
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[1]], Chromosomes[parentIndexArray[3]], randomPos));
+                    break;
+                case 5:
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[0]], Chromosomes[parentIndexArray[1]], randomPos));
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[0]], Chromosomes[parentIndexArray[2]], randomPos));
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[1]], Chromosomes[parentIndexArray[2]], randomPos));
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[1]], Chromosomes[parentIndexArray[3]], randomPos));
+                    randomPos = random.Next(0, Weights.Count - 1);
+                    children.AddRange(CrossoverTwoParents(size, Chromosomes[parentIndexArray[2]], Chromosomes[parentIndexArray[3]], randomPos));
+                    break;
+                default:
+                    break;
+            }
 
             return children;
         }
@@ -321,7 +422,6 @@ namespace KnapsackGA
         public void MutateChildren()
         {
             Children = MutateAllChildren(PopulationSize, Children);
-            Generation += 1;
         }
 
         private List<string> MutateAllChildren(int size, List<string> children)
